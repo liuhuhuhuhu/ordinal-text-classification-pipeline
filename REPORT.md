@@ -29,7 +29,6 @@ The raw labels appeared in heterogeneous formats including:
 
 This heterogeneity required explicit label harmonization before modeling.
 
----
 
 ## 2. Label Harmonization
 
@@ -53,7 +52,6 @@ Unrecognized labels and explicit placeholders (e.g., `?`) were treated as missin
 
 A total of **191 observations** were removed during this step.
 
----
 
 ## 3. Text Normalization
 
@@ -77,7 +75,6 @@ were intentionally avoided because negations, function words, and punctuation of
 
 This approach follows common practice in computational social science and political text analysis, where preserving linguistic information is generally preferred over aggressive text reduction.
 
----
 
 ## 4. Duplicate Handling
 
@@ -102,7 +99,6 @@ The cleaning pipeline identified:
 - **47 conflicting duplicate groups**
 - **94 observations involved in annotation conflicts**
 
----
 
 ## 5. Cleaning Audit Trail
 
@@ -118,7 +114,6 @@ The table below summarizes the number of observations remaining after each clean
 
 The final modeling dataset contains **9,411 unique observations**.
 
----
 
 ## 6. Final Class Distribution
 
@@ -136,7 +131,6 @@ The resulting dataset exhibits moderate class imbalance, with mildly positive an
 
 This distribution is broadly consistent with expectations for naturally occurring social-media sentiment data.
 
----
 
 ## 7. Summary of Cleaning Decisions
 
@@ -153,3 +147,203 @@ This distribution is broadly consistent with expectations for naturally occurrin
 | Stopword removal / stemming | Not applied |
 
 The entire cleaning pipeline was implemented programmatically and can be reproduced end-to-end from the raw data using the provided scripts.
+
+
+# Part 2 — Baseline Model
+
+## 2.1 Model Specification
+
+As a classical baseline, I implemented a sparse text representation using TF-IDF features combined with a linear classifier.
+
+The baseline pipeline consisted of:
+
+- TF-IDF vectorization;
+- Logistic Regression classifier;
+- stratified train-validation split;
+- fixed random seed for reproducibility.
+
+The final training pipeline was:
+
+```
+Text
+↓
+TF-IDF representation
+↓
+Logistic Regression
+↓
+Ordinal prediction (0–4)
+```
+
+This baseline serves as the reference point for the ordinal-aware continuous scoring model developed in Part 3.
+
+
+## 2.2 Train-Validation Split
+
+The cleaned dataset containing 9,411 observations was divided into:
+
+- Training set: 7,528 observations (80%)
+- Validation set: 1,883 observations (20%)
+
+Stratified sampling was applied using the sentiment labels to preserve the class distribution across both subsets.
+
+A fixed random seed (`random_state=42`) was used to ensure reproducibility.
+
+The resulting label distributions were nearly identical across the training and validation sets, confirming successful stratification.
+
+
+## 2.3 Feature Engineering
+
+Text was represented using TF-IDF features.
+
+The vectorizer configuration was:
+
+| Parameter | Value |
+|----------|------|
+| ngram_range | (1,2) |
+| min_df | 3 |
+| max_df | 0.95 |
+| max_features | 30,000 |
+| sublinear_tf | True |
+
+Both unigrams and bigrams were included because sentiment in short social-media texts is often expressed through short phrases such as:
+
+- "not good"
+- "very bad"
+- "so happy"
+
+The resulting feature matrices had dimensions:
+
+| Dataset | Shape |
+|---------|-------|
+| Training | (7528, 10903) |
+| Validation | (1883, 10903) |
+
+
+## 2.4 Classifier
+
+The baseline classifier was multinomial Logistic Regression.
+
+The following settings were used:
+
+| Parameter | Value |
+|----------|------|
+| max_iter | 2000 |
+| class_weight | balanced |
+| solver | liblinear |
+| random_state | 42 |
+
+Class balancing was enabled to mitigate the moderate class imbalance present in the cleaned dataset.
+
+
+## 2.5 Validation Performance
+
+The baseline model achieved:
+
+| Metric | Value |
+|--------|------|
+| Exact Accuracy | 0.4057 |
+| Within-One Accuracy | 0.7950 |
+| MAE | 0.8842 |
+| Signed Bias | 0.0133 |
+| Macro-F1 | 0.3905 |
+
+The exact accuracy is consistent with expectations for a classical sparse-feature baseline on a five-class ordinal sentiment classification task.
+
+
+## 2.6 Per-Class Performance
+
+| Label | F1 Score |
+|------|---------|
+| 0 | 0.3780 |
+| 1 | 0.4476 |
+| 2 | 0.2376 |
+| 3 | 0.4685 |
+| 4 | 0.4211 |
+
+The model performed best on mildly positive (`label=3`) and mildly negative (`label=1`) posts.
+
+The most difficult category was the neutral class (`label=2`), which achieved the lowest F1 score.
+
+This pattern is common in sentiment classification because neutral posts often share lexical characteristics with weakly positive and weakly negative posts.
+
+
+## 2.7 Error Structure
+
+The confusion matrix reveals that most classification errors occurred between adjacent sentiment categories rather than extreme categories.
+
+Examples include:
+
+- `0 → 1`
+- `1 → 2`
+- `2 → 3`
+- `3 → 4`
+
+Large errors such as:
+
+- `0 → 4`
+- `4 → 0`
+
+were comparatively rare.
+
+This observation is supported by the high within-one accuracy of 79.5%.
+
+The model therefore appears to capture the ordinal structure of the sentiment labels despite relatively modest exact accuracy.
+
+
+## 2.8 Signed Bias Analysis
+
+The signed bias was:
+
+```
+0.0133
+```
+
+which is very close to zero.
+
+This suggests that the model does not systematically overpredict or underpredict sentiment and exhibits little directional bias across the ordinal scale.
+
+
+Confusion Matrix Analysis
+
+The confusion matrix reveals that prediction errors are concentrated near the diagonal.
+
+Most mistakes occur between adjacent sentiment categories such as:
+
+- 0 ↔ 1
+- 1 ↔ 2
+- 2 ↔ 3
+- 3 ↔ 4
+
+Extreme errors, including:
+
+- 0 → 4
+- 4 → 0
+
+are comparatively rare.
+
+This pattern indicates that the model captures the ordinal structure of the sentiment scale despite relatively modest exact accuracy.
+
+The neutral category (label = 2) was the most difficult to classify, exhibiting the lowest F1 score and substantial confusion with neighboring categories.
+
+Such behavior is common in sentiment analysis tasks because neutral texts often overlap lexically with weakly positive and weakly negative expressions.
+
+## 2.9 Summary
+
+The TF-IDF + Logistic Regression baseline provides a strong and interpretable benchmark for the task.
+
+Its main limitations are:
+
+- difficulty distinguishing neutral from weak sentiment;
+- inability to explicitly model the ordinal relationships among labels.
+
+These limitations motivate the continuous scoring and threshold calibration approach introduced in Part 3.
+
+
+
+
+
+
+
+
+
+
