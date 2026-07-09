@@ -1,19 +1,14 @@
 #!/bin/bash
-
 set -e
 
-echo "Starting ordinal text classification pipeline..."
+echo "Installing dependencies..."
+pip install -r requirements.txt
 
-echo "Step 1: Cleaning raw data"
-python src/clean_data.py
+echo "Running ordinal classification pipeline..."
+python src/pipeline.py
 
-echo "Step 2: Training baseline model and generating baseline predictions"
-python src/train_baseline.py
+echo "Submission files generated:"
+ls -lh predictions_baseline.csv
+ls -lh predictions_best.csv
 
-echo "Step 3: Training best continuous-score model and generating best predictions"
-python src/train_best_model.py
-
-echo "Pipeline completed successfully."
-echo "Generated files:"
-echo "- predictions_baseline.csv"
-echo "- predictions_best.csv"
+echo "Finished successfully."
