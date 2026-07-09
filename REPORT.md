@@ -26,6 +26,7 @@ The raw dataset contained **9,980 social-media posts** with heterogeneous labels
 ## Cleaning audit
 
 | Step | Rows |
+|------|------|
 | Raw dataset | 9980 |
 | Remove missing labels | 9789 |
 | Remove empty texts | 9765 |
@@ -37,6 +38,7 @@ A total of **47 conflicting duplicate groups (94 rows)** were removed.
 Final class distribution:
 
 | Label | Share |
+|------|------|
 | 0 | 12.8% |
 | 1 | 25.9% |
 | 2 | 19.2% |
@@ -59,6 +61,7 @@ A stratified train-validation split with a fixed random seed was used.
 ## Validation performance
 
 | Metric | Value |
+|-------|------|
 | Exact Accuracy | 0.4057 |
 | Within-One Accuracy | 0.7950 |
 | MAE | 0.8842 |
@@ -66,7 +69,6 @@ A stratified train-validation split with a fixed random seed was used.
 | Macro-F1 | 0.3905 |
 
 The baseline captures lexical sentiment cues reasonably well but ignores the ordinal structure of labels.
-
 
 # 3. Continuous Scoring and Threshold Calibration
 
@@ -112,6 +114,7 @@ Threshold calibration consistently outperformed naive rounding by adapting decis
 ## Validation performance
 
 | Metric | Baseline | Best Model |
+|-------|---------|-----------|
 | Exact Accuracy | 0.4057 | **0.4663** |
 | Within-One Accuracy | 0.7950 | **0.9134** |
 | MAE | 0.8842 | **0.6314** |
@@ -119,7 +122,6 @@ Threshold calibration consistently outperformed naive rounding by adapting decis
 | Macro-F1 | 0.3905 | **0.4125** |
 
 The final model improved exact accuracy by **6.1 percentage points**, reaching the expected mid-to-high 40% range described in the instructions.
-
 
 # 4. Error Analysis
 
@@ -159,15 +161,16 @@ Given additional time, I would explore:
 - isotonic calibration,
 - sparse-dense ensemble models.
 
-# 6. Hours log
+
+# 6. Hours Log
 
 | Task | Hours |
+|------|------|
 | Data engineering | 1 |
 | Baseline model | 2 |
 | Continuous scoring and calibration | 4 |
 | Reporting | 2 |
 | **Total** | **9** |
-
 
 
 
